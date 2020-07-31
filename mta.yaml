@@ -1,0 +1,81 @@
+ID: MTA_Project_SGR
+_schema-version: '2.1'
+description: MTA Project
+parameters:
+  deploy_mode: html5-repo
+version: 0.0.1
+modules:
+  - name: mta-project-sgr-approuter
+    type: approuter.nodejs
+    path: mta-project-sgr-approuter
+    parameters:
+      disk-quota: 256M
+      memory: 256M
+    requires:
+      - name: MTA_Project_SGR_html5_repo_runtime
+      - name: st-test
+      - name: uaa_MTA_Project_SGR
+      - name: portal_resources_MTA_Project_SGR
+  - name: MTA_Project_SGR_ui_deployer
+    type: com.sap.html5.application-content
+    path: MTA_Project_SGR_ui_deployer
+    requires:
+      - name: MTA_Project_SGR_html5_repo_host
+    build-parameters:
+      requires:
+        - name: TRAVEL_APP_SGR
+          artifacts:
+            - './*'
+          target-path: resources/TRAVEL_APP_SGR
+  - name: TRAVEL_APP_SGR
+    type: html5
+    path: TRAVEL_APP_SGR
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npm run build
+      supported-platforms: []
+      build-result: dist
+  - name: FLP_Site_Module_SGR
+    type: com.sap.portal.content
+    path: FLP_Site_Module_SGR
+    parameters:
+      stack: cflinuxfs3
+      memory: 128M
+      buildpack: 'https://github.com/cloudfoundry/nodejs-buildpack/releases/download/v1.6.39/nodejs-buildpack-cflinuxfs3-v1.6.39.zip'
+    requires:
+      - name: portal_resources_MTA_Project_SGR
+      - name: uaa_MTA_Project_SGR
+      - name: MTA_Project_SGR_html5_repo_host
+      - name: MTA_Project_SGR_ui_deployer
+resources:
+  - name: MTA_Project_SGR_html5_repo_runtime
+    parameters:
+      service-plan: app-runtime
+      service: html5-apps-repo
+    type: org.cloudfoundry.managed-service
+  - name: MTA_Project_SGR_html5_repo_host
+    parameters:
+      service-plan: app-host
+      service: html5-apps-repo
+    type: org.cloudfoundry.managed-service
+  - name: st-test
+    parameters:
+      service-name: st-test
+      protocol:
+        - ODataV2
+      service: abap-trial
+      service-plan: shared
+    type: org.cloudfoundry.existing-service
+  - name: uaa_MTA_Project_SGR
+    parameters:
+      path: ./xs-security.json
+      service-plan: application
+      service: xsuaa
+    type: org.cloudfoundry.managed-service
+  - name: portal_resources_MTA_Project_SGR
+    parameters:
+      service-plan: standard
+      service: portal
+    type: org.cloudfoundry.managed-service
